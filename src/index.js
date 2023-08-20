@@ -47,4 +47,44 @@ function renderGallery(images) {
         .join('');
     
     gallery.insertAdjacentHTML('beforeend', markUp);
+
+    const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
+}
+
+function onSearchForm(e) {
+    e.preventDefault();
+    page = 1;
+    query = e.currentTarget.elements.searchQuery.value.trim();
+    gallery.innerHTML = '';
+
+    if (querry === '') {
+        Notiflix.Notify.failure(
+            'The search string cannot be empty. Please specify your search query.'
+        );
+        return;
+    }
+
+    fetchImages(query, page, perPage)
+        .then(data => {
+            if (data.totalHits === 0) {
+                Notiflix.Notify.failure(
+                    'Sorry, there are no images matching your search query. Please try again.'
+                );
+            } else {
+                renderGallery(data.hits);
+                simpleLightBox = new SimpleLightbox('.gallery a').refresh();
+                Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+        }
+        })
+        .catch(error => console.error(error))
+        .finally(() => {
+            searchForm.reset();
+        })
 }
