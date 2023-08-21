@@ -1,140 +1,101 @@
-import Notiflix from 'notiflix';
-import SimpleLightbox from 'simplelightbox';
-import 'simplelightbox/dist/simple-lightbox.min.css';
-import { fetchImages } from './js/fetchimages';
+import Notify from 'notiflix';
+import { gallery, btnLoadMore, searchForm } from './js/ref';
+import ApiService from './js/ApiService';
+import { renderPhotoCard } from './js/renderPhotoCard';
 
-const searchForm = document.getElementById('search-form');
-const gallery = document.querySelector('.gallery');
+const imageApiService = new ApiService();
 
-let query = '';
-let page = 1;
-let simpleLightBox;
-const perPage = 40;
+searchForm.addEventListener('submit', onSearch);
+btnLoadMore.addEventListener('click', onBtnLoadMore);
 
-searchForm.addEventListener('submit', onSearchForm);
+async function onSearch(evt) {
+    try {
+        evt.preventDefault();
+        cleanGallery();
 
-function renderGallery(images) {
-  // Перевірка чи існує галерея перед вставкою даних
-  if (!gallery) {
-    return;
-  }
+        const searchQuery = evt.currentTarget.elements.searchQuery.value.trim();
 
-  const markup = images
-    .map(image => {
-      const {
-        id,
-        largeImageURL,
-        webformatURL,
-        tags,
-        likes,
-        views,
-        comments,
-        downloads,
-      } = image;
-      return `
-        <a class="gallery__link" href="${largeImageURL}">
-          <div class="gallery-item" id="${id}">
-            <img class="gallery-item__img" src="${webformatURL}" alt="${tags}" loading="lazy" />
-            <div class="info">
-              <p class="info-item"><b>Likes</b>${likes}</p>
-              <p class="info-item"><b>Views</b>${views}</p>
-              <p class="info-item"><b>Comments</b>${comments}</p>
-              <p class="info-item"><b>Downloads</b>${downloads}</p>
-            </div>
-          </div>
-        </a>
-      `;
-    })
-    .join('');
+        if (!searchQuery) {
+            Notify.Notify.warning('Please type something to search.');
 
-  gallery.insertAdjacentHTML('beforeend', markup);
+            isHiddenBtnLoadMore();
 
-  // Цей код дозволяє автоматично прокручувати сторінку на висоту 2 карток галереї, коли вона завантажується
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
+            return;
+        }
 
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
+        imageApiService.query = searchQuery;
+        imageApiService.page = 1;
+        imageApiService.hits = 0;
+
+        evt.currentTarget.reset();
+        const data = await imageApiService.fetchImage();
+        if (data.hits.length == 0) {
+            Notify.Notify.failure(
+                'Sorry, there are no images matching your search query. Please try again.'
+            );
+
+            isHiddenBtnLoadMore();
+
+            return;
+        }
+
+        renderPhotoCard(data);
+        visibleBtnLoadMore();
+        btnLoadMore.disabled = false;
+
+        Notify.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+    } catch (error) {
+        console.log('~ error', error);
+    }
 }
 
-function onSearchForm(e) {
-  e.preventDefault();
-  page = 1;
-  query = e.currentTarget.elements.searchQuery.value.trim();
-  gallery.innerHTML = '';
+function cleanGallery() {
+    gallery.innerHTML = '';
+}
 
-  if (query === '') {
-    Notiflix.Notify.failure(
-      'The search string cannot be empty. Please specify your search query.',
-    );
-    return;
-  }
+function visibleBtnLoadMore() {
+    btnLoadMore.classList.remove('is-hidden');
+    btnLoadMore.classList.add('visible');
+}
 
-  fetchImages(query, page, perPage)
-    .then(data => {
-      if (data.totalHits === 0) {
-        Notiflix.Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.',
-        );
-      } else {
-        renderGallery(data.hits);
-        simpleLightBox = new SimpleLightbox('.gallery a').refresh();
-        Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
-      }
-    })
-    .catch(error => console.log(error))
-    .finally(() => {
-      searchForm.reset();
+function isHiddenBtnLoadMore() {
+    btnLoadMore.classList.add('is-hidden');
+    btnLoadMore.classList.remove('visible');
+}
+
+async function onBtnLoadMore() {
+    try {
+        const data = await imageApiService.fetchImage();
+        if (data.hits.length == 0) {
+            Notify.Notify.info(
+                "We're sorry, but you've reached the end of search results."
+            );
+            btnLoadMore.disabled = true;
+            return;
+        }
+        if (imageApiService.hits > imageApiService.totalHits) {
+            Notify.Notify.info(
+                "We're sorry, but you've reached the end of search results."
+            );
+            btnLoadMore.disabled = true;
+            return;
+        }
+        renderPhotoCard(data);
+        pageScrolling();
+
+        imageApiService.hits += 40;
+    } catch (error) {
+        console.log('~ error', error);
+    }
+}
+
+function pageScrolling() {
+    const { height: cardHeight } = document
+        .querySelector('.gallery')
+        .firstElementChild.getBoundingClientRect();
+
+    window.scrollBy({
+        top: cardHeight * 2,
+        behavior: 'smooth',
     });
 }
-
-function onloadMore() {
-  page += 1;
-  simpleLightBox.destroy();
-  // simpleLightBox.refresh();
-
-  fetchImages(query, page, perPage)
-    .then(data => {
-      renderGallery(data.hits);
-      simpleLightBox = new SimpleLightbox('.gallery a').refresh();
-
-      const totalPages = Math.ceil(data.totalHits / perPage);
-
-      if (page > totalPages) {
-        Notiflix.Notify.failure(
-          "We're sorry, but you've reached the end of search results.",
-        );
-      }
-    })
-    .catch(error => console.log(error));
-}
-
-function checkIfEndOfPage() {
-  return (
-    window.innerHeight + window.pageYOffset >=
-    document.documentElement.scrollHeight
-  );
-}
-
-// Функція, яка виконуеться, якщо користувач дійшов до кінця сторінки
-function showLoadMorePage() {
-  if (checkIfEndOfPage()) {
-    onloadMore();
-  }
-}
-
-// Додати подію на прокручування сторінки, яка викликає функцію showLoadMorePage
-window.addEventListener('scroll', showLoadMorePage);
-
-// кнопка “вгору”->
-arrowTop.onclick = function () {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  // після scrollTo відбудеться подія "scroll", тому стрілка автоматично сховається
-};
-
-window.addEventListener('scroll', function () {
-  arrowTop.hidden = scrollY < document.documentElement.clientHeight;
-});
