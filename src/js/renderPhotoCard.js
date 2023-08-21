@@ -45,17 +45,7 @@ export function renderPhotoCard(data) {
         .join('');
 
     gallery.insertAdjacentHTML('beforeend', stringTag);
-function pageScrolling() {
-    const { height: cardHeight } = document
-        .querySelector('.gallery')
-        .firstElementChild.getBoundingClientRect();
 
-    window.scrollBy({
-        top: cardHeight * 2,
-        behavior: 'smooth',
-    });
-
-}
     new SimpleLightbox('.photo-card a', {
         captionsData: 'alt',
         captionDelay: 250,
