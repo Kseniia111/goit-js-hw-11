@@ -89,13 +89,23 @@ async function onBtnLoadMore() {
     }
 }
 
-function pageScrolling() {
-    const { height: cardHeight } = document
-        .querySelector('.gallery')
-        .firstElementChild.getBoundingClientRect();
+//function pageScrolling() {
+//    const { height: cardHeight } = document
+//        .querySelector('.gallery')
+//        .firstElementChild.getBoundingClientRect();
 
-    window.scrollBy({
-        top: cardHeight * 2,
-        behavior: 'smooth',
-    });
-}
+ //   window.scrollBy({
+ //       top: cardHeight * 2,
+ //       behavior: 'smooth',
+ //   });
+//}
+
+
+arrowTop.onclick = function () {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // після scrollTo відбудеться подія "scroll", тому стрілка автоматично сховається
+};
+
+window.addEventListener('scroll', function () {
+  arrowTop.hidden = scrollY < document.documentElement.clientHeight;
+});
