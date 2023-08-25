@@ -55,6 +55,9 @@ input {
 img {
     width: 400px;
     height: 250px;
+    display: block;
+    height: 30vh;
+    -o-object-fit: cover;
     object-fit: cover;
 }
 
@@ -78,9 +81,11 @@ img {
 
 .info {
     padding: 10px;
+    justify-content: space-around;
 }
 
 .info-item {
     margin: 0 10px 0 0;
+
 }
 
