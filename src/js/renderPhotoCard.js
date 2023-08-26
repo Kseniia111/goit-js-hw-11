@@ -6,12 +6,13 @@
 // comments - кількість коментарів.
 // downloads - кількість завантажень.
 
-import { gallery, btnLoadMore } from './ref';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
-export function renderPhotoCard(images) {
-     if (!gallery) {
+const gallery = document.querySelector('.gallery');
+function renderGallery(images) {
+
+  if (!gallery) {
     return;
   }
 
@@ -45,7 +46,6 @@ export function renderPhotoCard(images) {
 
   gallery.insertAdjacentHTML('beforeend', markup);
 
-  // Цей код дозволяє автоматично прокручувати сторінку на висоту 2 карток галереї, коли вона завантажується
   const { height: cardHeight } = document
     .querySelector('.gallery')
     .firstElementChild.getBoundingClientRect();
@@ -55,3 +55,5 @@ export function renderPhotoCard(images) {
     behavior: 'smooth',
   });
 }
+
+export { renderGallery };

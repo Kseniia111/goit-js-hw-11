@@ -1,8 +1,9 @@
 import axios from 'axios';
-// Збереження ключа API в окремому файлі змінних
-import { KEY } from './api-key.js';
+import Notiflix from 'notiflix';
 
-// Перевірка помилок під час виконання запиту до серверу
+
+const KEY = '38938100-b936ed9173255b3eb24e79faf';
+
 axios.defaults.baseURL = 'https://pixabay.com/api/';
 axios.interceptors.response.use(
   response => {
